@@ -12,9 +12,8 @@ dep_t = list()
 dep_p = list()
 arr_t = list()
 t_subtype = list()
-i = 0
 n = 0
-k = 0
+i = 0
 
 
 with open('api.rasp.json', encoding='utf-8') as f:
@@ -43,7 +42,7 @@ def Country_find(your_country):
 
 def Region_find(your_country, your_region):
     for region in Country_find(your_country)["regions"]:
-        if your_region in region["title"]:  
+        if your_region in region["title"]:
             return region
 
 
@@ -127,28 +126,27 @@ def send_welcome(message):
 
 @bot.message_handler(commands=['more'])
 def send_next(message):
-    global k
-    if len(dep_t) - (i + n) < 5:
-        k = len(dep_t) - i - n
-        for j in range(i + k, i + n + k - 1):
-            bot.send_message(message.chat.id, f'Время отправления: {dep_t[j]}\n'
-                                                  f'Платформа отправления: {dep_p[j]}\n'
-                                                  f'Тип поезда: {t_subtype[j]}\n'
-                                                  f'Время прибытия: {arr_t[j]}')
-        bot.send_message(message.chat.id, 'Это все рейсы на выбранную дату.')
-    else:
-        k += 5
-        for j in range(i + k, i + n + k - 1):
+    global i, n
+    m = 0
+    i += 5
+    for j in range(i, i + 5):
+        try:
             bot.send_message(message.chat.id, f'Время отправления: {dep_t[j]}\n'
                                               f'Платформа отправления: {dep_p[j]}\n'
                                               f'Тип поезда: {t_subtype[j]}\n'
                                               f'Время прибытия: {arr_t[j]}')
-        bot.send_message(message.chat.id, 'Отправьте команду "/more" для просмотра следующих рейсов.')
+        except IndexError:
+            m = 1
+    if m == 1:
+        bot.send_message(message.chat.id, 'К сожалению, на указанные день и время рейсов больше нет :( \n'
+                                          'Попробуйте выбрать другую дату.')
+    else:
+        bot.send_message(message.from_user.id, 'Отправьте команду "/more" для просмотра следующих рейсов.')
 
 
 @bot.message_handler(func=lambda message: True)
 def send_message(message):
-    global dep_t, dep_p, arr_t, t_subtype, n, i, k
+    global dep_t, dep_p, arr_t, t_subtype, n, i
     mes_list = message.text.split(', ')
     if len(mes_list) == 4:
         time = make_your_time()
@@ -172,22 +170,26 @@ def send_message(message):
     arr_t = make_arrival_time(answer_data)
     t_subtype = make_transport_subtype(answer_data)
     i = 0
+    k = 0
+    n = 5
     while not compare_time(time, dep_t[i]):
         i += 1
         if i >= len(dep_t):
-            bot.send_message(message.chat.id, 'К сожалению, сегодня рейсов больше нет :( \n'
-                                                'Попробуйте выбрать другую дату.')
+            bot.send_message(message.chat.id, 'К сожалению, на указанные день и время рейсов больше нет :( \n'
+                                              'Попробуйте выбрать другую дату.')
             break
-    if len(dep_t) - i < 5:
-        n = len(dep_t) - i
-    else:
-        n = 5
-    if message.text != 'еще':
-        for j in range(i, i + n):
+    for j in range(i, i + 5):
+        try:
             bot.send_message(message.chat.id, f'Время отправления: {dep_t[j]}\n'
-                                                f'Платформа отправления: {dep_p[j]}\n'
-                                                f'Тип поезда: {t_subtype[j]}\n'
-                                                f'Время прибытия: {arr_t[j]}')
+                                              f'Платформа отправления: {dep_p[j]}\n'
+                                              f'Тип поезда: {t_subtype[j]}\n'
+                                              f'Время прибытия: {arr_t[j]}')
+        except IndexError:
+            k = 1
+    if k == 1:
+        bot.send_message(message.chat.id, 'К сожалению, на указанные день и время рейсов больше нет :( \n'
+                                          'Попробуйте выбрать другую дату.')
+    else:
         bot.send_message(message.from_user.id, 'Отправьте команду "/more" для просмотра следующих рейсов.')
 
 
